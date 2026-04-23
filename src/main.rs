@@ -122,6 +122,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .route("/analytics/overview", get(handlers::analytics::overview))
         .route("/analytics/trends", get(handlers::analytics::trends))
+        .route("/feedback/status", get(handlers::feedback::feedback_status))
         .route("/feedback", post(handlers::feedback::create_feedback))
         .route("/comments", get(handlers::comment::list_comments));
 

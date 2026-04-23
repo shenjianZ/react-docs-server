@@ -23,3 +23,27 @@ impl From<crate::domain::entities::page_feedbacks::Model> for FeedbackResult {
         }
     }
 }
+
+#[derive(Debug, Serialize)]
+pub struct FeedbackStatusResult {
+    pub submitted: bool,
+    pub id: Option<String>,
+    pub value: Option<String>,
+}
+
+impl From<Option<crate::domain::entities::page_feedbacks::Model>> for FeedbackStatusResult {
+    fn from(model: Option<crate::domain::entities::page_feedbacks::Model>) -> Self {
+        match model {
+            Some(model) => Self {
+                submitted: true,
+                id: Some(model.id),
+                value: Some(model.value),
+            },
+            None => Self {
+                submitted: false,
+                id: None,
+                value: None,
+            },
+        }
+    }
+}

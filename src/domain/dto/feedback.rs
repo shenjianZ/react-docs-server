@@ -8,3 +8,9 @@ pub struct CreateFeedbackRequest {
     pub lang: Option<String>,
     pub slug: Option<String>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct FeedbackStatusQuery {
+    pub slug: Option<String>,
+    pub lang: Option<String>,
+}
