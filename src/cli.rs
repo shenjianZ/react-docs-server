@@ -108,10 +108,15 @@ impl CliArgs {
     /// 获取环境变量的日志过滤器（工程化版本）
     pub fn get_log_filter(&self) -> String {
         let level = self.get_log_level();
+        let crate_target = env!("CARGO_PKG_NAME").replace('-', "_");
         match level {
-            "trace" => "web_rust_template=trace,tower_http=trace,axum=trace,sqlx=debug".into(),
-            "debug" => "web_rust_template=debug,tower_http=debug,axum=debug,sqlx=debug".into(),
-            _ => "web_rust_template=info,tower_http=info,axum=info".into(),
+            "trace" => {
+                format!("{crate_target}=trace,tower_http=trace,axum=trace,sqlx=debug")
+            }
+            "debug" => {
+                format!("{crate_target}=debug,tower_http=debug,axum=debug,sqlx=debug")
+            }
+            _ => format!("{crate_target}=info,tower_http=info,axum=info"),
         }
     }
 
@@ -175,8 +180,6 @@ impl CliArgs {
 
         for candidate in &candidates {
             if candidate.exists() {
-                // 使用 println! 而非 tracing::info!
-                println!("✓ Found configuration file: {}", candidate.display());
                 return Some(candidate.clone());
             }
         }

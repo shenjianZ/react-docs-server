@@ -88,9 +88,12 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Debug mode: {}", args.is_debug_enabled());
 
     // 初始化数据库（自动创建数据库和表）
+    tracing::info!("Initializing database...");
     let pool = db::init_database(&config.database).await?;
+    tracing::info!("Database initialization completed");
 
     // 初始化 Redis 客户端
+    tracing::info!("Initializing Redis...");
     let redis_client = infra::redis::redis_client::RedisClient::new(&config.redis.build_url())
         .await
         .map_err(|e| anyhow::anyhow!("Redis 初始化失败: {}", e))?;
