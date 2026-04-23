@@ -7,6 +7,7 @@
 ### 架构特色
 - **DDD 分层架构**：领域层、基础设施层、应用层清晰分离
 - **生产就绪**：JWT 双 Token 认证、Argon2 密码哈希、结构化日志
+- **认证升级**：邮箱验证码注册/登录、密码登录并存、Google/GitHub OAuth 弹窗登录、微信/QQ 占位接入
 - **多数据库支持**：MySQL / PostgreSQL / SQLite 无缝切换
 
 ### 技术栈
@@ -68,16 +69,37 @@ cargo run
 cargo run -- -c config/local.toml
 ```
 
-服务将在 http://localhost:3000 启动
+服务将在 http://localhost:3000 启动，API 前缀为 `/api`
 
 ## 快速测试
+
+### 认证升级上线顺序
+
+> 现有数据库升级时，请先执行 SQL 迁移，不要只依赖启动时的自动建表/补列逻辑。
+
+1. 执行数据库迁移脚本  
+   - `docs/sql/migrations/auth-upgrade.mysql.sql`
+   - `docs/sql/migrations/auth-upgrade.postgresql.sql`
+   - `docs/sql/migrations/auth-upgrade.sqlite.sql`
+2. 配置 `auth.email_verification`、`auth.email_verification.smtp`、`auth.providers.*`
+3. 再启动新版本服务
+
+详细说明见 [`docs/development/auth-upgrade.md`](docs/development/auth-upgrade.md)
+
+### 发送注册验证码
+
+```bash
+curl -X POST http://localhost:3000/api/auth/email/send-code \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "purpose": "register"}'
+```
 
 ### 用户注册
 
 ```bash
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "password123"}'
+  -d '{"email": "user@example.com", "password": "password123", "verification_code": "123456"}'
 ```
 
 响应：
@@ -136,8 +158,12 @@ cargo run -- -e production -c config/production.toml
 
 - `GET /health` - 健康检查
 - `GET /info` - 服务器信息
-- `POST /auth/register` - 用户注册
-- `POST /auth/login` - 用户登录
+- `POST /auth/email/send-code` - 发送邮箱验证码
+- `POST /auth/register` - 邮箱验证码注册
+- `POST /auth/login` - 邮箱 + 密码登录
+- `POST /auth/login/email-code` - 邮箱验证码登录
+- `GET /auth/oauth/:provider/start` - 第三方登录入口
+- `GET /auth/oauth/:provider/callback` - 第三方登录回调
 - `POST /auth/refresh` - 刷新 Token
 
 ### 需要认证的接口

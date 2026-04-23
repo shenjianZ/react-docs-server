@@ -58,6 +58,7 @@ impl AppConfig {
             builder = builder.set_default("auth.jwt_secret", default_jwt_secret())?;
             builder = builder.set_default("auth.access_token_expiration_minutes", 15)?;
             builder = builder.set_default("auth.refresh_token_expiration_days", 7)?;
+            builder = builder.set_default("auth.frontend_base_url", "http://localhost:5173")?;
 
             // 设置 redis 默认值
             builder = builder.set_default("redis.host", default_redis_host())?;

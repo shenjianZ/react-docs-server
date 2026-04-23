@@ -111,9 +111,19 @@ async fn main() -> anyhow::Result<()> {
     let public_routes = Router::new()
         .route("/health", get(handlers::health::health_check))
         .route("/info", get(handlers::health::server_info))
+        .route("/auth/email/send-code", post(handlers::auth::send_email_code))
         .route("/auth/register", post(handlers::auth::register))
         .route("/auth/login", post(handlers::auth::login))
+        .route(
+            "/auth/login/email-code",
+            post(handlers::auth::login_with_email_code),
+        )
         .route("/auth/refresh", post(handlers::auth::refresh))
+        .route("/auth/oauth/:provider/start", get(handlers::auth::oauth_start))
+        .route(
+            "/auth/oauth/:provider/callback",
+            get(handlers::auth::oauth_callback),
+        )
         .route("/analytics/view", post(handlers::analytics::track_view))
         .route(
             "/analytics/duration",

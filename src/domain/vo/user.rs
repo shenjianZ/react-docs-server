@@ -1,10 +1,10 @@
 use serde::Serialize;
 
-/// 当前登录用户资料
 #[derive(Debug, Serialize)]
 pub struct UserProfile {
     pub id: String,
     pub email: String,
+    pub email_verified: bool,
     pub username: Option<String>,
     pub nickname: Option<String>,
     pub avatar_url: Option<String>,
@@ -20,6 +20,7 @@ impl From<crate::domain::entities::users::Model> for UserProfile {
         Self {
             id: user.id,
             email: user.email,
+            email_verified: user.email_verified,
             username: user.username,
             nickname: user.nickname,
             avatar_url: user.avatar_url,

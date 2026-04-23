@@ -7,8 +7,8 @@
 ### Base URL
 
 ```
-开发环境: http://localhost:3000
-生产环境: https://api.yourdomain.com
+开发环境: http://localhost:3000/api
+生产环境: https://api.yourdomain.com/api
 ```
 
 ### 认证方式
@@ -64,8 +64,12 @@ Authorization: Bearer <access_token>
 |------|------|------|----------|
 | GET | `/health` | 健康检查 | [查看详情](endpoints/public.md#get-health) |
 | GET | `/info` | 服务器信息 | [查看详情](endpoints/public.md#get-info) |
+| POST | `/auth/email/send-code` | 发送邮箱验证码 | [查看详情](endpoints/public.md#post-authemailsend-code) |
 | POST | `/auth/register` | 用户注册 | [查看详情](endpoints/public.md#post-authregister) |
 | POST | `/auth/login` | 用户登录 | [查看详情](endpoints/public.md#post-authlogin) |
+| POST | `/auth/login/email-code` | 邮箱验证码登录 | [查看详情](endpoints/public.md#post-authloginemail-code) |
+| GET | `/auth/oauth/:provider/start` | 第三方登录入口 | [查看详情](endpoints/public.md#get-authoauthproviderstart) |
+| GET | `/auth/oauth/:provider/callback` | 第三方登录回调 | [查看详情](endpoints/public.md#get-authoauthprovidercallback) |
 | POST | `/auth/refresh` | 刷新 Token | [查看详情](endpoints/public.md#post-authrefresh) |
 
 ### 需要认证的接口
@@ -121,18 +125,30 @@ Content-Type: application/json
 ### 注册用户
 
 ```bash
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:3000/api/auth/email/send-code \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
-    "password": "password123"
+    "purpose": "register"
+  }'
+```
+
+### 验证码注册用户
+
+```bash
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "password123",
+    "verification_code": "123456"
   }'
 ```
 
 ### 用户登录
 
 ```bash
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -143,7 +159,7 @@ curl -X POST http://localhost:3000/auth/login \
 ### 访问受保护接口
 
 ```bash
-curl -X POST http://localhost:3000/auth/delete \
+curl -X POST http://localhost:3000/api/auth/delete \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <your_access_token>" \
   -d '{
@@ -155,7 +171,7 @@ curl -X POST http://localhost:3000/auth/delete \
 ### 健康检查
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:3000/api/health
 ```
 
 ## 详细文档

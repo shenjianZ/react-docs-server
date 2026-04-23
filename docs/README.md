@@ -14,6 +14,7 @@
 
 #### 后端开发者
 - [快速开始指南](development/getting-started.md) - 安装、配置和运行项目
+- [认证升级执行说明](development/auth-upgrade.md) - 认证迁移、SMTP 与 OAuth 配置顺序
 - [项目结构详解](development/project-structure.md) - DDD 分层架构说明
 - [DDD 架构规范](development/ddd-architecture.md) - 各层设计原则和开发规范
 - [代码风格规范](development/code-style.md) - Rust 代码风格和命名规范
@@ -40,6 +41,7 @@ docs/
 │       └── frontend-integration.md    # 前端集成代码示例
 ├── development/                       # 开发指南
 │   ├── getting-started.md             # 快速开始
+│   ├── auth-upgrade.md                # 认证升级执行说明
 │   ├── project-structure.md           # 项目结构详解
 │   ├── ddd-architecture.md            # DDD 分层架构规范
 │   ├── code-style.md                  # 代码风格和命名规范

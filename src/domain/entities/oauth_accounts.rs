@@ -3,23 +3,14 @@ use sea_orm::Set;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "users")]
+#[sea_orm(table_name = "oauth_accounts")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: String,
-    #[sea_orm(unique)]
-    pub email: String,
-    pub email_verified: bool,
-    pub password_set: bool,
-    #[sea_orm(unique, nullable)]
-    pub username: Option<String>,
-    pub nickname: Option<String>,
-    pub avatar_url: Option<String>,
-    pub bio: Option<String>,
-    pub role: Option<String>,
-    pub status: Option<String>,
-    pub last_login_at: Option<DateTime>,
-    pub password_hash: String,
+    pub user_id: String,
+    pub provider: String,
+    pub provider_user_id: String,
+    pub provider_email: Option<String>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }

@@ -6,8 +6,12 @@
 
 - [GET /health - 健康检查](#get-health)
 - [GET /info - 服务器信息](#get-info)
+- [POST /auth/email/send-code - 发送邮箱验证码](#post-authemailsend-code)
 - [POST /auth/register - 用户注册](#post-authregister)
 - [POST /auth/login - 用户登录](#post-authlogin)
+- [POST /auth/login/email-code - 邮箱验证码登录](#post-authloginemail-code)
+- [GET /auth/oauth/:provider/start - 第三方登录入口](#get-authoauthproviderstart)
+- [GET /auth/oauth/:provider/callback - 第三方登录回调](#get-authoauthprovidercallback)
 - [POST /auth/refresh - 刷新 Token](#post-authrefresh)
 
 ---
@@ -47,7 +51,7 @@ GET /health
 ### 示例
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:3000/api/health
 ```
 
 ### 错误码
@@ -97,7 +101,7 @@ GET /info
 ### 示例
 
 ```bash
-curl http://localhost:3000/info
+curl http://localhost:3000/api/info
 ```
 
 ### 错误码
@@ -105,6 +109,42 @@ curl http://localhost:3000/info
 | 错误码 | 说明 |
 |-------|------|
 | 500 | 服务器内部错误 |
+
+---
+
+## POST /auth/email/send-code
+
+发送注册或登录验证码，验证码存入 Redis，具备 TTL 和限流控制。
+
+### 请求
+
+```http
+POST /auth/email/send-code
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "user@example.com",
+  "purpose": "register"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| email | string | 是 | 邮箱地址 |
+| purpose | string | 是 | `register` 或 `login` |
+
+### 示例
+
+```bash
+curl -X POST http://localhost:3000/api/auth/email/send-code \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "purpose": "register"
+  }'
+```
 
 ---
 
@@ -124,7 +164,8 @@ Content-Type: application/json
 ```json
 {
   "email": "user@example.com",
-  "password": "password123"
+  "password": "password123",
+  "verification_code": "123456"
 }
 ```
 
@@ -134,6 +175,7 @@ Content-Type: application/json
 |------|------|------|------|
 | email | string | 是 | 用户邮箱，必须是有效的邮箱格式 |
 | password | string | 是 | 用户密码，建议长度至少 8 位 |
+| verification_code | string | 是 | 6 位邮箱验证码 |
 
 ### 响应
 
@@ -164,11 +206,12 @@ Content-Type: application/json
 ### 示例
 
 ```bash
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
-    "password": "password123"
+    "password": "password123",
+    "verification_code": "123456"
   }'
 ```
 
@@ -247,7 +290,7 @@ Content-Type: application/json
 ### 示例
 
 ```bash
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -266,8 +309,64 @@ curl -X POST http://localhost:3000/auth/login \
 ### 注意事项
 
 - 登录失败不会返回具体的错误信息（如"邮箱不存在"或"密码错误"），统一返回"邮箱或密码错误"
+- 若账号仅通过 OAuth 创建且未设置本地密码，会返回明确提示，引导使用邮箱验证码或第三方登录
 - 密码错误次数过多可能会被临时限制（取决于具体实现）
 - 登录成功后会生成新的 Token 对，旧的 Token 会失效
+
+---
+
+## POST /auth/login/email-code
+
+用户使用邮箱验证码直接登录，无需输入密码。
+
+### 请求
+
+```http
+POST /auth/login/email-code
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "user@example.com",
+  "verification_code": "123456"
+}
+```
+
+### 示例
+
+```bash
+curl -X POST http://localhost:3000/api/auth/login/email-code \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "verification_code": "123456"
+  }'
+```
+
+---
+
+## GET /auth/oauth/:provider/start
+
+统一第三方登录入口。
+
+- `google` / `github`：后端生成授权地址并 302 跳转
+- `wechat` / `qq`：当前返回“暂未开放”
+
+前端推荐使用 popup 打开本接口。
+
+---
+
+## GET /auth/oauth/:provider/callback
+
+统一第三方登录回调。
+
+后端完成：
+
+1. 校验 `state`
+2. 用 `code` 换取第三方 token
+3. 拉取用户信息并按同邮箱自动归并
+4. 返回极简 HTML，通过 `window.opener.postMessage(...)` 将登录结果回传主窗口
 
 ---
 

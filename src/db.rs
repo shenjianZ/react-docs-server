@@ -312,6 +312,80 @@ where
     Ok(())
 }
 
+async fn execute_schema_patch(
+    db: &DatabaseConnection,
+    builder: &DbBackend,
+    sql: String,
+    label: &str,
+) -> anyhow::Result<()> {
+    match db.execute(Statement::from_string(*builder, sql)).await {
+        Ok(_) => {
+            tracing::info!("✅ {}检查完成", label);
+        }
+        Err(e) => {
+            let err_msg = e.to_string().to_lowercase();
+            if err_msg.contains("duplicate column")
+                || err_msg.contains("already exists")
+                || (err_msg.contains("exists") && err_msg.contains("column"))
+            {
+                tracing::info!("✅ {}已存在", label);
+            } else {
+                return Err(anyhow::anyhow!("更新{}失败: {}", label, e));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn sync_auth_schema(db: &DatabaseConnection) -> anyhow::Result<()> {
+    let builder = db.get_database_backend();
+    let patches = match builder {
+        DbBackend::MySql => vec![
+            (
+                "ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT TRUE"
+                    .to_string(),
+                "用户邮箱验证字段",
+            ),
+            (
+                "ALTER TABLE users ADD COLUMN password_set BOOLEAN NOT NULL DEFAULT TRUE"
+                    .to_string(),
+                "用户本地密码标记字段",
+            ),
+        ],
+        DbBackend::Postgres => vec![
+            (
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT TRUE"
+                    .to_string(),
+                "用户邮箱验证字段",
+            ),
+            (
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_set BOOLEAN NOT NULL DEFAULT TRUE"
+                    .to_string(),
+                "用户本地密码标记字段",
+            ),
+        ],
+        DbBackend::Sqlite => vec![
+            (
+                "ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT 1"
+                    .to_string(),
+                "用户邮箱验证字段",
+            ),
+            (
+                "ALTER TABLE users ADD COLUMN password_set BOOLEAN NOT NULL DEFAULT 1"
+                    .to_string(),
+                "用户本地密码标记字段",
+            ),
+        ],
+    };
+
+    for (sql, label) in patches {
+        execute_schema_patch(db, &builder, sql, label).await?;
+    }
+
+    Ok(())
+}
+
 /// 创建数据库表结构
 async fn create_tables(db: &DatabaseConnection) -> anyhow::Result<()> {
     tracing::info!("检查数据库表结构...");
@@ -322,11 +396,12 @@ async fn create_tables(db: &DatabaseConnection) -> anyhow::Result<()> {
     // 导入所有 entities
     use crate::domain::entities::{
         audit_logs, bookmarks, comments, ip_blacklist, page_feedbacks, page_view_aggregates,
-        page_views, users,
+        page_views, users, oauth_accounts,
     };
 
     // 创建所有表（添加新表只需一行！）
     create_single_table(db, &schema, &builder, users::Entity, "用户表").await?;
+    create_single_table(db, &schema, &builder, oauth_accounts::Entity, "OAuth账号表").await?;
     create_single_table(db, &schema, &builder, page_feedbacks::Entity, "页面反馈表").await?;
     create_single_table(db, &schema, &builder, comments::Entity, "评论表").await?;
     create_single_table(db, &schema, &builder, bookmarks::Entity, "收藏表").await?;
@@ -341,6 +416,7 @@ async fn create_tables(db: &DatabaseConnection) -> anyhow::Result<()> {
     .await?;
     create_single_table(db, &schema, &builder, audit_logs::Entity, "审计日志表").await?;
     create_single_table(db, &schema, &builder, ip_blacklist::Entity, "IP黑名单表").await?;
+    sync_auth_schema(db).await?;
 
     tracing::info!("✅ 数据库表结构检查完成");
 
